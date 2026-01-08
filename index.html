@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>目标达成模拟器</title>
+    <title>目标达成模拟器 (硬核版)</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --bg: #f8fafc;
+            --primary: #6366f1; /* Indigo */
+            --success: #10b981; /* Emerald */
+            --danger: #ef4444; /* Red */
+            --comfort: #3b82f6; /* Blue */
+            --bg: #f1f5f9;
             --text: #1e293b;
         }
 
@@ -37,7 +38,7 @@
             max-width: 400px;
             text-align: center;
             position: relative;
-            transition: transform 0.2s;
+            transition: transform 0.1s;
         }
 
         h1 {
@@ -71,7 +72,7 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #e2e8f0, #94a3b8);
+            background: radial-gradient(circle at 30% 30%, #f8fafc, #cbd5e1);
             position: relative;
             z-index: 2;
             transition: transform 0.1s, background 0.3s;
@@ -79,10 +80,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.5rem;
+            border: 4px solid white;
         }
 
-        /* 外部光环 (代表气场/状态) */
+        /* 外部光环 */
         .aura {
             position: absolute;
             top: 50%;
@@ -91,8 +93,8 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: var(--primary);
-            opacity: 0.2;
+            background: var(--comfort);
+            opacity: 0.15;
             z-index: 1;
             transition: all 0.1s;
         }
@@ -114,12 +116,12 @@
 
         .bar-container {
             width: 24px;
-            height: 140px;
-            background: #f1f5f9;
+            height: 160px; /* 加高一点以便看清区间 */
+            background: #e2e8f0;
             border-radius: 12px;
             position: relative;
             overflow: hidden;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #cbd5e1;
         }
 
         .bar-fill {
@@ -130,16 +132,26 @@
             border-radius: 10px 10px 0 0;
         }
 
-        /* 区域线 */
+        /* 区域线 - 动态调整位置以匹配JS逻辑 */
         .zone-marker {
             position: absolute;
             width: 100%;
-            border-top: 1px dashed rgba(0,0,0,0.3);
+            border-top: 2px dashed rgba(0,0,0,0.2);
             left: 0;
             z-index: 5;
         }
-        .zone-flow { bottom: 40%; } /* 心流阈值 */
-        .zone-burnout { bottom: 85%; border-color: var(--danger); } /* 崩溃阈值 */
+        .zone-marker::after {
+            position: absolute;
+            right: -30px;
+            top: -8px;
+            font-size: 10px;
+            color: #94a3b8;
+            width: 30px;
+        }
+        
+        /* 这里的百分比对应 JS 中的阈值 */
+        .zone-flow { bottom: 55%; border-color: var(--success); } 
+        .zone-burnout { bottom: 85%; border-color: var(--danger); } 
 
         .metric-label {
             margin-top: 8px;
@@ -151,7 +163,7 @@
         /* 控制按钮 */
         .action-btn {
             width: 100%;
-            padding: 18px;
+            padding: 20px;
             font-size: 1.1rem;
             font-weight: bold;
             color: white;
@@ -159,7 +171,7 @@
             border: none;
             border-radius: 16px;
             cursor: pointer;
-            box-shadow: 0 4px 0 #334155;
+            box-shadow: 0 6px 0 #334155;
             transition: all 0.1s;
             touch-action: manipulation;
             position: relative;
@@ -167,7 +179,7 @@
         }
 
         .action-btn:active {
-            transform: translateY(4px);
+            transform: translateY(6px);
             box-shadow: none;
         }
 
@@ -176,21 +188,23 @@
             box-shadow: none;
             cursor: not-allowed;
             transform: none;
+            color: #94a3b8;
         }
 
         /* 状态文字 */
         .status-badge {
             position: absolute;
-            top: -10px;
-            right: -10px;
+            top: -15px;
             background: #333;
             color: white;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: bold;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, background-color 0.3s;
+            white-space: nowrap;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         /* 弹窗/覆盖层 */
@@ -200,16 +214,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255,255,255,0.95);
+            background: rgba(255,255,255,0.98);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             border-radius: 24px;
             z-index: 100;
-            padding: 20px;
+            padding: 24px;
             box-sizing: border-box;
-            backdrop-filter: blur(5px);
         }
 
         .input-group {
@@ -218,14 +231,15 @@
         }
 
         input[type="text"] {
-            width: 80%;
-            padding: 12px;
+            width: 100%;
+            padding: 14px;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
             text-align: center;
             outline: none;
             transition: border-color 0.3s;
+            box-sizing: border-box;
         }
         input[type="text"]:focus { border-color: var(--primary); }
 
@@ -233,27 +247,23 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
+            padding: 14px 30px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
         }
+        .btn-primary:hover { background: #4f46e5; }
 
         /* 动画效果 */
-        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both infinite; }
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both infinite; }
         @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-
-        .pulse { animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
         }
 
         .explode-anim { animation: explode 0.6s forwards; }
@@ -262,19 +272,34 @@
             50% { transform: scale(1.4); background: var(--danger); opacity: 0.8; }
             100% { transform: scale(2); opacity: 0; }
         }
+        
+        .pulse-text { animation: pulseText 1s infinite; }
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 警告闪烁 */
+        .warning-bg {
+            animation: warningFlash 0.5s infinite;
+        }
+        @keyframes warningFlash {
+            0%, 100% { background-color: #f1f5f9; }
+            50% { background-color: #fee2e2; }
+        }
 
     </style>
 </head>
 <body>
 
-<div class="game-card">
+<div class="game-card" id="game-card">
     <h1>目标达成模拟器</h1>
     <div class="target-display" id="goal-display">等待设定目标...</div>
 
     <div class="visualizer">
-        <div class="status-badge" id="status-badge">心流状态</div>
+        <div class="status-badge" id="status-badge">舒适区</div>
         <div class="aura" id="aura"></div>
-        <div class="stress-ball" id="ball">😐</div>
+        <div class="stress-ball" id="ball">😴</div>
     </div>
 
     <div class="metrics">
@@ -283,9 +308,9 @@
             <div class="bar-container">
                 <div class="zone-marker zone-burnout"></div>
                 <div class="zone-marker zone-flow"></div>
-                <div class="bar-fill" id="stress-bar" style="height: 0%; background: var(--primary);"></div>
+                <div class="bar-fill" id="stress-bar" style="height: 0%; background: var(--comfort);"></div>
             </div>
-            <div class="metric-label">心理压力</div>
+            <div class="metric-label">压力值</div>
         </div>
 
         <!-- 进度条 -->
@@ -293,45 +318,51 @@
             <div class="bar-container">
                 <div class="bar-fill" id="progress-bar" style="height: 0%; background: var(--success);"></div>
             </div>
-            <div class="metric-label">完成进度</div>
+            <div class="metric-label">完成度</div>
         </div>
     </div>
 
     <button class="action-btn" id="control-btn" 
         onmousedown="startWorking()" onmouseup="stopWorking()" onmouseleave="stopWorking()" 
         ontouchstart="startWorking()" ontouchend="stopWorking()">
-        按住努力 (Push)
+        按住施压 (Push)
     </button>
 
     <!-- 开始界面 -->
     <div class="overlay" id="start-screen">
         <h2>你的目标是什么？</h2>
-        <p style="color:#64748b; font-size: 0.9rem; margin-bottom: 20px;">
-            输入一个你近期想完成的挑战<br>(如：考研、减肥、存钱)
+        <p style="color:#64748b; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;">
+            <span style="color: var(--danger); font-weight: bold;">警告：</span><br>
+            过于安逸会导致进度<b>倒退</b>。<br>
+            你需要维持在狭窄的<b>最佳平衡</b>区间。
         </p>
         <div class="input-group">
-            <input type="text" id="goal-input" placeholder="在此输入目标..." maxlength="10">
+            <input type="text" id="goal-input" placeholder="例如：3个月练出腹肌" maxlength="12">
         </div>
         <button class="btn-primary" onclick="initGame()">开始挑战</button>
     </div>
 
     <!-- 结算界面 -->
     <div class="overlay" id="end-screen" style="display: none;">
-        <div style="font-size: 3rem; margin-bottom: 10px;" id="end-icon">💥</div>
+        <div style="font-size: 4rem; margin-bottom: 10px;" id="end-icon">💥</div>
         <h2 id="end-title">崩溃了！</h2>
-        <p id="end-desc" style="color:#64748b; padding: 0 10px; line-height: 1.5;"></p>
-        <button class="btn-primary" onclick="showStartScreen()">换个目标</button>
+        <p id="end-desc" style="color:#64748b; padding: 0 10px; line-height: 1.6; text-align: center;"></p>
+        <button class="btn-primary" onclick="showStartScreen()">再试一次</button>
     </div>
 </div>
 
 <script>
-    // 游戏参数
+    // 游戏核心参数 - 难度已调整
     const PARAMS = {
-        stressRate: 0.7,      // 施压时压力上升速度
-        recoveryRate: 0.35,   // 休息时压力下降速度
-        flowThreshold: 40,    // 进入心流（高效率）的压力阈值
-        burnoutThreshold: 85, // 崩溃边缘的压力阈值
-        baseSpeed: 0.05       // 基础进度速度
+        stressRate: 0.8,      // 施压时压力上升速度 (变快了)
+        recoveryRate: 0.4,    // 休息时压力下降速度
+        
+        // 关键区间调整：窗口变窄了 (55-85)
+        flowThreshold: 55,    // 最佳平衡下限 (提高了，更难进入)
+        burnoutThreshold: 85, // 崩溃边缘上限
+        
+        baseSpeed: 0.08,      // 基础前进速度
+        decayRate: 0.05       // 舒适区倒退速度 (逆水行舟)
     };
 
     // 状态变量
@@ -346,6 +377,7 @@
 
     // DOM 元素
     const ui = {
+        card: document.getElementById('game-card'),
         stressBar: document.getElementById('stress-bar'),
         progressBar: document.getElementById('progress-bar'),
         ball: document.getElementById('ball'),
@@ -363,7 +395,7 @@
 
     function initGame() {
         const input = ui.goalInput.value.trim();
-        state.goalName = input || "虚无缥缈的目标";
+        state.goalName = input || "无名目标";
         
         // 重置状态
         state.stress = 0;
@@ -376,9 +408,10 @@
         ui.startScreen.style.display = 'none';
         ui.endScreen.style.display = 'none';
         ui.btn.classList.remove('disabled');
-        ui.btn.innerText = "按住努力 (Push)";
+        ui.btn.innerText = "按住施压 (Push)";
         ui.ball.classList.remove('explode-anim');
-        ui.ball.innerText = "😐";
+        ui.card.classList.remove('warning-bg');
+        ui.ball.innerText = "😴";
         
         startGameLoop();
     }
@@ -393,9 +426,9 @@
         if (state.isGameOver) return;
         state.isWorking = true;
         ui.btn.style.background = "#334155";
-        ui.btn.style.transform = "translateY(4px)";
+        ui.btn.style.transform = "translateY(6px)";
         ui.btn.style.boxShadow = "none";
-        ui.btn.innerText = "正在死磕...";
+        ui.btn.innerText = "施压中...";
     }
 
     function stopWorking(e) {
@@ -403,8 +436,8 @@
         state.isWorking = false;
         ui.btn.style.background = "#0f172a";
         ui.btn.style.transform = "translateY(0)";
-        ui.btn.style.boxShadow = "0 4px 0 #334155";
-        ui.btn.innerText = "松开休息 (Relax)";
+        ui.btn.style.boxShadow = "0 6px 0 #334155";
+        ui.btn.innerText = "松开 (Relax)";
     }
 
     function startGameLoop() {
@@ -421,34 +454,51 @@
             }
             state.stress = Math.max(0, state.stress); // 不低于0
 
-            // 2. 进度计算
-            let efficiency = 0;
+            // 2. 状态判定与进度计算
             
+            // 崩溃判定
             if (state.stress >= 100) {
                 triggerBurnout();
                 return;
             }
 
+            // 逻辑分支
             if (state.stress < PARAMS.flowThreshold) {
-                // 舒适区：效率极低
-                efficiency = 0.1; 
-                updateMood("😴", "太安逸了", "#3b82f6");
+                // === 舒适区 (Comfort Zone) ===
+                // 惩罚机制：进度倒退
+                if (state.progress > 0) {
+                    state.progress -= PARAMS.decayRate;
+                    // 如果倒退，进度条变红提示
+                    ui.progressBar.style.backgroundColor = "#94a3b8"; 
+                }
+                updateMood("😴", "太安逸 (进度倒退)", "var(--comfort)");
+                ui.card.classList.remove('warning-bg');
+
             } else if (state.stress < PARAMS.burnoutThreshold) {
-                // 心流区：效率随压力增加而增加
-                // 模拟适当的焦虑能带来动力
-                efficiency = 1.0 + (state.stress - PARAMS.flowThreshold) / 50;
-                updateMood("🔥", "心流状态", "#10b981");
-            } else {
-                // 危险区：效率开始下降，因为焦虑导致动作变形
-                efficiency = 0.5;
-                updateMood("🤯", "压力过大", "#ef4444");
-            }
-
-            // 只有有压力时进度才走，或者惯性很小
-            if (state.stress > 5) {
+                // === 最佳平衡 (Optimal Balance) ===
+                // 奖励机制：进度飞快
+                // 效率随着接近崩溃边缘而略微增加 (风险回报)
+                let efficiency = 1.0 + (state.stress - PARAMS.flowThreshold) / 40;
                 state.progress += PARAMS.baseSpeed * efficiency;
+                
+                ui.progressBar.style.backgroundColor = "var(--success)";
+                updateMood("⚖️", "最佳平衡", "var(--success)");
+                ui.card.classList.remove('warning-bg');
+
+            } else {
+                // === 焦虑区 (Anxiety Zone) ===
+                // 风险机制：效率减半，且随时可能崩溃
+                state.progress += PARAMS.baseSpeed * 0.4; // 动作变形，效率低
+                
+                ui.progressBar.style.backgroundColor = "var(--danger)";
+                updateMood("🤯", "濒临崩溃", "var(--danger)");
+                ui.card.classList.add('warning-bg'); // 背景闪烁警告
             }
 
+            // 边界修正
+            state.progress = Math.max(0, state.progress);
+
+            // 成功判定
             if (state.progress >= 100) {
                 triggerSuccess();
                 return;
@@ -463,29 +513,36 @@
     function updateMood(emoji, text, color) {
         ui.ball.innerText = emoji;
         ui.statusBadge.innerText = text;
-        ui.statusBadge.style.backgroundColor = color;
+        
+        // 解析 CSS 变量
+        let computedColor = color;
+        if (color.startsWith('var')) {
+             // 简单处理，实际应用中可能需要 getComputedStyle
+             if(color.includes('danger')) computedColor = '#ef4444';
+             else if(color.includes('success')) computedColor = '#10b981';
+             else computedColor = '#3b82f6';
+        }
+
+        ui.statusBadge.style.backgroundColor = computedColor;
         ui.statusBadge.style.opacity = 1;
-        ui.stressBar.style.backgroundColor = color;
+        ui.stressBar.style.backgroundColor = computedColor;
         
         // 光环大小随压力变化
-        const size = 100 + (state.stress * 1.5);
+        const size = 100 + (state.stress * 1.2);
         ui.aura.style.width = `${size}px`;
         ui.aura.style.height = `${size}px`;
-        ui.aura.style.backgroundColor = color;
+        ui.aura.style.backgroundColor = computedColor;
     }
 
     function updateVisuals() {
         ui.stressBar.style.height = `${state.stress}%`;
         ui.progressBar.style.height = `${state.progress}%`;
 
-        // 震动特效
+        // 震动特效：只有在焦虑区才震动
         if (state.stress > PARAMS.burnoutThreshold) {
             ui.ball.classList.add('shake');
-            ui.gameCard = document.querySelector('.game-card');
-            // ui.gameCard.style.transform = `translate(${Math.random()*2-1}px, ${Math.random()*2-1}px)`;
         } else {
             ui.ball.classList.remove('shake');
-            // ui.gameCard.style.transform = 'none';
         }
     }
 
@@ -494,11 +551,12 @@
         ui.ball.classList.remove('shake');
         ui.ball.classList.add('explode-anim');
         ui.btn.classList.add('disabled');
+        ui.card.classList.remove('warning-bg');
         
         setTimeout(() => {
             ui.endIcon.innerText = "💥";
-            ui.endTitle.innerText = "心态崩了 (Burnout)";
-            ui.endDesc.innerHTML = `你在追求 <b>${state.goalName}</b> 的过程中把自己逼得太紧了。<br><br>过度焦虑导致身心俱疲，你选择了放弃。`;
+            ui.endTitle.innerText = "彻底崩溃";
+            ui.endDesc.innerHTML = `你在 <b>${state.goalName}</b> 的压力下崩断了弦。<br><br>原因：长时间处于高压红区，没有及时休息调整。`;
             ui.endScreen.style.display = 'flex';
         }, 800);
     }
@@ -506,10 +564,11 @@
     function triggerSuccess() {
         state.isGameOver = true;
         ui.btn.classList.add('disabled');
+        ui.card.classList.remove('warning-bg');
         
         ui.endIcon.innerText = "🏆";
         ui.endTitle.innerText = "目标达成！";
-        ui.endDesc.innerHTML = `恭喜！你成功完成了 <b>${state.goalName}</b>。<br><br>你完美掌握了“张弛有度”的艺术，在保持动力的同时没有让自己崩溃。`;
+        ui.endDesc.innerHTML = `太强了！你拿下了 <b>${state.goalName}</b>。<br><br>你不仅克服了懒惰（防止了进度倒退），还完美控制了压力水平。你是真正的时间管理大师。`;
         ui.endScreen.style.display = 'flex';
     }
 
