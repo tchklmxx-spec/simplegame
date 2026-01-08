@@ -3,11 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>减肥平衡模拟器：高压锅版</title>
+    <title>目标达成模拟器</title>
     <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,115 +25,101 @@
             user-select: none;
             -webkit-user-select: none;
             overflow: hidden;
+            color: var(--text);
         }
 
-        .game-container {
+        .game-card {
             background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 90%;
+            padding: 24px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px -5px rgba(0,0,0,0.1);
+            width: 85%;
             max-width: 400px;
             text-align: center;
             position: relative;
+            transition: transform 0.2s;
         }
 
         h1 {
-            font-size: 1.2rem;
-            color: #333;
-            margin-bottom: 5px;
+            font-size: 1.4rem;
+            margin: 0 0 5px 0;
+            font-weight: 800;
+            letter-spacing: -0.5px;
         }
 
-        p.subtitle {
-            font-size: 0.8rem;
-            color: #666;
+        .target-display {
+            font-size: 1rem;
+            color: #64748b;
             margin-bottom: 20px;
-            height: 20px;
+            font-weight: 500;
+            min-height: 1.5em;
         }
 
-        /* 锅的样式 */
-        .pot-container {
+        /* 核心可视化区域 */
+        .visualizer {
             position: relative;
-            width: 150px;
-            height: 120px;
-            margin: 0 auto 30px;
-            transition: transform 0.1s;
-        }
-
-        .pot-lid {
             width: 160px;
-            height: 40px;
-            background: #555;
-            border-radius: 50% 50% 10% 10%;
-            position: absolute;
-            top: -10px;
-            left: -5px;
-            z-index: 2;
-            transition: top 0.1s;
-        }
-
-        .pot-body {
-            width: 150px;
-            height: 100px;
-            background: #e0e0e0;
-            border: 2px solid #999;
-            border-radius: 0 0 20px 20px;
-            position: absolute;
-            top: 20px;
-            overflow: hidden;
-            background: linear-gradient(to right, #dcdcdc, #f1f1f1, #dcdcdc);
-        }
-
-        .pot-handle {
-            width: 180px;
-            height: 15px;
-            background: #333;
-            position: absolute;
-            top: 25px;
-            left: -15px;
-            border-radius: 10px;
-            z-index: 3;
-        }
-
-        /* 蒸汽动画 */
-        .steam {
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            width: 20px;
-            height: 40px;
-            background: rgba(255,255,255,0.6);
-            border-radius: 10px;
-            filter: blur(5px);
-            opacity: 0;
-            transform: translateX(-50%);
-            pointer-events: none;
-        }
-
-        /* 仪表盘 */
-        .bars-container {
+            height: 160px;
+            margin: 0 auto 30px;
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            height: 200px;
+            align-items: center;
             justify-content: center;
         }
 
-        .bar-wrapper {
+        /* 压力球 */
+        .stress-ball {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #e2e8f0, #94a3b8);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.1s, background 0.3s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        /* 外部光环 (代表气场/状态) */
+        .aura {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0.2;
+            z-index: 1;
+            transition: all 0.1s;
+        }
+
+        /* 仪表盘 */
+        .metrics {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .metric-col {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 60px;
         }
 
-        .bar-bg {
-            width: 30px;
-            height: 100%;
-            background: #eee;
-            border-radius: 15px;
+        .bar-container {
+            width: 24px;
+            height: 140px;
+            background: #f1f5f9;
+            border-radius: 12px;
             position: relative;
             overflow: hidden;
-            border: 1px solid #ddd;
+            border: 1px solid #e2e8f0;
         }
 
         .bar-fill {
@@ -133,94 +127,121 @@
             bottom: 0;
             width: 100%;
             transition: height 0.05s linear, background-color 0.2s;
+            border-radius: 10px 10px 0 0;
         }
 
-        /* 压力条颜色逻辑：低=蓝，中=绿，高=红 */
-        #pressure-bar { background-color: #3b82f6; }
-        
-        /* 进度条 */
-        #progress-bar { background-color: #10b981; }
-
-        .bar-label {
-            margin-top: 10px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: #555;
-        }
-
-        /* 区域标记线 */
-        .zone-line {
+        /* 区域线 */
+        .zone-marker {
             position: absolute;
             width: 100%;
-            height: 2px;
-            background: rgba(0,0,0,0.2);
-            z-index: 10;
+            border-top: 1px dashed rgba(0,0,0,0.3);
+            left: 0;
+            z-index: 5;
         }
-        .zone-optimal { bottom: 50%; border-bottom: 1px dashed #666; }
-        .zone-danger { bottom: 85%; border-bottom: 2px solid #ff4444; }
+        .zone-flow { bottom: 40%; } /* 心流阈值 */
+        .zone-burnout { bottom: 85%; border-color: var(--danger); } /* 崩溃阈值 */
+
+        .metric-label {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+        }
 
         /* 控制按钮 */
-        #control-btn {
+        .action-btn {
             width: 100%;
-            padding: 15px;
+            padding: 18px;
             font-size: 1.1rem;
             font-weight: bold;
             color: white;
-            background: #333;
+            background: #0f172a;
             border: none;
-            border-radius: 12px;
+            border-radius: 16px;
             cursor: pointer;
-            box-shadow: 0 4px 0 #000;
+            box-shadow: 0 4px 0 #334155;
             transition: all 0.1s;
             touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
         }
 
-        #control-btn:active {
+        .action-btn:active {
             transform: translateY(4px);
-            box-shadow: 0 0 0 #000;
-            background: #444;
+            box-shadow: none;
         }
 
-        #control-btn.disabled {
-            background: #999;
+        .action-btn.disabled {
+            background: #cbd5e1;
             box-shadow: none;
             cursor: not-allowed;
             transform: none;
         }
 
-        /* 状态覆盖层 */
-        #overlay {
+        /* 状态文字 */
+        .status-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #333;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* 弹窗/覆盖层 */
+        .overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 20px;
+            border-radius: 24px;
             z-index: 100;
-            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
         }
 
-        #overlay h2 { margin: 0 0 10px 0; }
-        #overlay p { margin: 0 0 20px 0; padding: 0 20px; color: #666; }
-        #restart-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
+        .input-group {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus { border-color: var(--primary); }
+
+        .btn-primary {
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        /* 动画类 */
-        .shake {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
-        }
-
+        /* 动画效果 */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both infinite; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
             20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -228,13 +249,17 @@
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        .explode {
-            animation: explode 0.5s forwards;
+        .pulse { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
+        .explode-anim { animation: explode 0.6s forwards; }
         @keyframes explode {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; background: red; }
+            50% { transform: scale(1.4); background: var(--danger); opacity: 0.8; }
             100% { transform: scale(2); opacity: 0; }
         }
 
@@ -242,203 +267,251 @@
 </head>
 <body>
 
-<div class="game-container">
-    <h1>减肥高压锅</h1>
-    <p class="subtitle" id="status-text">准备烹饪...</p>
+<div class="game-card">
+    <h1>目标达成模拟器</h1>
+    <div class="target-display" id="goal-display">等待设定目标...</div>
 
-    <div class="pot-container" id="pot">
-        <div class="steam" id="steam"></div>
-        <div class="pot-lid" id="lid"></div>
-        <div class="pot-handle"></div>
-        <div class="pot-body"></div>
+    <div class="visualizer">
+        <div class="status-badge" id="status-badge">心流状态</div>
+        <div class="aura" id="aura"></div>
+        <div class="stress-ball" id="ball">😐</div>
     </div>
 
-    <div class="bars-container">
-        <!-- 压力条 -->
-        <div class="bar-wrapper">
-            <div class="bar-bg">
-                <div class="zone-line zone-danger"></div>
-                <div class="zone-line zone-optimal"></div>
-                <div class="bar-fill" id="pressure-bar" style="height: 0%"></div>
+    <div class="metrics">
+        <!-- 压力/焦虑值 -->
+        <div class="metric-col">
+            <div class="bar-container">
+                <div class="zone-marker zone-burnout"></div>
+                <div class="zone-marker zone-flow"></div>
+                <div class="bar-fill" id="stress-bar" style="height: 0%; background: var(--primary);"></div>
             </div>
-            <div class="bar-label">压力<br>(饥饿感)</div>
+            <div class="metric-label">心理压力</div>
         </div>
 
         <!-- 进度条 -->
-        <div class="bar-wrapper">
-            <div class="bar-bg">
-                <div class="bar-fill" id="progress-bar" style="height: 0%"></div>
+        <div class="metric-col">
+            <div class="bar-container">
+                <div class="bar-fill" id="progress-bar" style="height: 0%; background: var(--success);"></div>
             </div>
-            <div class="bar-label">煮饭进度<br>(减肥效果)</div>
+            <div class="metric-label">完成进度</div>
         </div>
     </div>
 
-    <button id="control-btn" onmousedown="startHeating()" onmouseup="stopHeating()" onmouseleave="stopHeating()" ontouchstart="startHeating()" ontouchend="stopHeating()">
-        按住加压 (控制饥饿)
+    <button class="action-btn" id="control-btn" 
+        onmousedown="startWorking()" onmouseup="stopWorking()" onmouseleave="stopWorking()" 
+        ontouchstart="startWorking()" ontouchend="stopWorking()">
+        按住努力 (Push)
     </button>
 
-    <!-- 游戏结束/胜利界面 -->
-    <div id="overlay">
-        <h2 id="result-title"></h2>
-        <p id="result-desc"></p>
-        <button id="restart-btn" onclick="resetGame()">再试一次</button>
+    <!-- 开始界面 -->
+    <div class="overlay" id="start-screen">
+        <h2>你的目标是什么？</h2>
+        <p style="color:#64748b; font-size: 0.9rem; margin-bottom: 20px;">
+            输入一个你近期想完成的挑战<br>(如：考研、减肥、存钱)
+        </p>
+        <div class="input-group">
+            <input type="text" id="goal-input" placeholder="在此输入目标..." maxlength="10">
+        </div>
+        <button class="btn-primary" onclick="initGame()">开始挑战</button>
+    </div>
+
+    <!-- 结算界面 -->
+    <div class="overlay" id="end-screen" style="display: none;">
+        <div style="font-size: 3rem; margin-bottom: 10px;" id="end-icon">💥</div>
+        <h2 id="end-title">崩溃了！</h2>
+        <p id="end-desc" style="color:#64748b; padding: 0 10px; line-height: 1.5;"></p>
+        <button class="btn-primary" onclick="showStartScreen()">换个目标</button>
     </div>
 </div>
 
 <script>
-    // 游戏状态
-    let pressure = 0; // 0-100
-    let progress = 0; // 0-100
-    let isHeating = false;
-    let gameLoopId;
-    let isGameOver = false;
+    // 游戏参数
+    const PARAMS = {
+        stressRate: 0.7,      // 施压时压力上升速度
+        recoveryRate: 0.35,   // 休息时压力下降速度
+        flowThreshold: 40,    // 进入心流（高效率）的压力阈值
+        burnoutThreshold: 85, // 崩溃边缘的压力阈值
+        baseSpeed: 0.05       // 基础进度速度
+    };
+
+    // 状态变量
+    let state = {
+        stress: 0,
+        progress: 0,
+        isWorking: false,
+        isGameOver: false,
+        goalName: "",
+        loopId: null
+    };
 
     // DOM 元素
-    const pressureBar = document.getElementById('pressure-bar');
-    const progressBar = document.getElementById('progress-bar');
-    const statusText = document.getElementById('status-text');
-    const pot = document.getElementById('pot');
-    const lid = document.getElementById('lid');
-    const steam = document.getElementById('steam');
-    const overlay = document.getElementById('overlay');
-    const resultTitle = document.getElementById('result-title');
-    const resultDesc = document.getElementById('result-desc');
-    const controlBtn = document.getElementById('control-btn');
+    const ui = {
+        stressBar: document.getElementById('stress-bar'),
+        progressBar: document.getElementById('progress-bar'),
+        ball: document.getElementById('ball'),
+        aura: document.getElementById('aura'),
+        goalDisplay: document.getElementById('goal-display'),
+        btn: document.getElementById('control-btn'),
+        statusBadge: document.getElementById('status-badge'),
+        startScreen: document.getElementById('start-screen'),
+        endScreen: document.getElementById('end-screen'),
+        goalInput: document.getElementById('goal-input'),
+        endTitle: document.getElementById('end-title'),
+        endDesc: document.getElementById('end-desc'),
+        endIcon: document.getElementById('end-icon')
+    };
 
-    // 参数配置
-    const HEAT_RATE = 0.8; // 加热时压力上升速度
-    const COOL_RATE = 0.4; // 不加热时压力下降速度
-    const COOK_THRESHOLD = 50; // 开始煮饭的压力阈值
-    const DANGER_THRESHOLD = 85; // 危险阈值
-    const COOK_SPEED_BASE = 0.05; // 基础煮饭速度
-
-    function startHeating(e) {
-        if(e) e.preventDefault(); // 防止手机端长按选中文本
-        if (isGameOver) return;
-        isHeating = true;
-        controlBtn.style.background = "#d93025";
-        controlBtn.innerText = "正在加压...";
+    function initGame() {
+        const input = ui.goalInput.value.trim();
+        state.goalName = input || "虚无缥缈的目标";
+        
+        // 重置状态
+        state.stress = 0;
+        state.progress = 0;
+        state.isGameOver = false;
+        state.isWorking = false;
+        
+        // UI 重置
+        ui.goalDisplay.innerText = `当前目标：${state.goalName}`;
+        ui.startScreen.style.display = 'none';
+        ui.endScreen.style.display = 'none';
+        ui.btn.classList.remove('disabled');
+        ui.btn.innerText = "按住努力 (Push)";
+        ui.ball.classList.remove('explode-anim');
+        ui.ball.innerText = "😐";
+        
+        startGameLoop();
     }
 
-    function stopHeating(e) {
+    function showStartScreen() {
+        ui.endScreen.style.display = 'none';
+        ui.startScreen.style.display = 'flex';
+    }
+
+    function startWorking(e) {
         if(e) e.preventDefault();
-        isHeating = false;
-        controlBtn.style.background = "#333";
-        controlBtn.innerText = "松开泄压 (恢复理智)";
+        if (state.isGameOver) return;
+        state.isWorking = true;
+        ui.btn.style.background = "#334155";
+        ui.btn.style.transform = "translateY(4px)";
+        ui.btn.style.boxShadow = "none";
+        ui.btn.innerText = "正在死磕...";
     }
 
-    function updateGame() {
-        if (isGameOver) return;
+    function stopWorking(e) {
+        if(e) e.preventDefault();
+        state.isWorking = false;
+        ui.btn.style.background = "#0f172a";
+        ui.btn.style.transform = "translateY(0)";
+        ui.btn.style.boxShadow = "0 4px 0 #334155";
+        ui.btn.innerText = "松开休息 (Relax)";
+    }
 
-        // 1. 物理逻辑：压力变化
-        if (isHeating) {
-            pressure += HEAT_RATE;
-        } else {
-            pressure -= COOL_RATE;
+    function startGameLoop() {
+        if (state.loopId) cancelAnimationFrame(state.loopId);
+        
+        function loop() {
+            if (state.isGameOver) return;
+
+            // 1. 压力计算
+            if (state.isWorking) {
+                state.stress += PARAMS.stressRate;
+            } else {
+                state.stress -= PARAMS.recoveryRate;
+            }
+            state.stress = Math.max(0, state.stress); // 不低于0
+
+            // 2. 进度计算
+            let efficiency = 0;
+            
+            if (state.stress >= 100) {
+                triggerBurnout();
+                return;
+            }
+
+            if (state.stress < PARAMS.flowThreshold) {
+                // 舒适区：效率极低
+                efficiency = 0.1; 
+                updateMood("😴", "太安逸了", "#3b82f6");
+            } else if (state.stress < PARAMS.burnoutThreshold) {
+                // 心流区：效率随压力增加而增加
+                // 模拟适当的焦虑能带来动力
+                efficiency = 1.0 + (state.stress - PARAMS.flowThreshold) / 50;
+                updateMood("🔥", "心流状态", "#10b981");
+            } else {
+                // 危险区：效率开始下降，因为焦虑导致动作变形
+                efficiency = 0.5;
+                updateMood("🤯", "压力过大", "#ef4444");
+            }
+
+            // 只有有压力时进度才走，或者惯性很小
+            if (state.stress > 5) {
+                state.progress += PARAMS.baseSpeed * efficiency;
+            }
+
+            if (state.progress >= 100) {
+                triggerSuccess();
+                return;
+            }
+
+            updateVisuals();
+            state.loopId = requestAnimationFrame(loop);
         }
-        // 限制压力范围 0-100 (但在爆炸判定前允许超过100)
-        if (pressure < 0) pressure = 0;
+        state.loopId = requestAnimationFrame(loop);
+    }
 
-        // 2. 游戏逻辑：煮饭
-        if (pressure > COOK_THRESHOLD && pressure < 100) {
-            // 压力越高，煮得越快（收益越大）
-            let efficiency = (pressure - COOK_THRESHOLD) / (100 - COOK_THRESHOLD);
-            progress += COOK_SPEED_BASE * (1 + efficiency * 2); 
-            statusText.innerText = "脂肪燃烧中... (保持住!)";
-            statusText.style.color = "#10b981";
-        } else if (pressure >= 100) {
-            explode();
-            return;
-        } else {
-            statusText.innerText = "压力不足，减肥暂停...";
-            statusText.style.color = "#666";
-        }
-
-        if (progress >= 100) {
-            winGame();
-            return;
-        }
-
-        // 3. 视觉更新
-        updateVisuals();
-
-        gameLoopId = requestAnimationFrame(updateGame);
+    function updateMood(emoji, text, color) {
+        ui.ball.innerText = emoji;
+        ui.statusBadge.innerText = text;
+        ui.statusBadge.style.backgroundColor = color;
+        ui.statusBadge.style.opacity = 1;
+        ui.stressBar.style.backgroundColor = color;
+        
+        // 光环大小随压力变化
+        const size = 100 + (state.stress * 1.5);
+        ui.aura.style.width = `${size}px`;
+        ui.aura.style.height = `${size}px`;
+        ui.aura.style.backgroundColor = color;
     }
 
     function updateVisuals() {
-        // 更新条高度
-        pressureBar.style.height = pressure + '%';
-        progressBar.style.height = progress + '%';
+        ui.stressBar.style.height = `${state.stress}%`;
+        ui.progressBar.style.height = `${state.progress}%`;
 
-        // 压力条颜色变化
-        if (pressure < COOK_THRESHOLD) {
-            pressureBar.style.backgroundColor = '#3b82f6'; // 蓝（冷）
-        } else if (pressure < DANGER_THRESHOLD) {
-            pressureBar.style.backgroundColor = '#10b981'; // 绿（最佳）
+        // 震动特效
+        if (state.stress > PARAMS.burnoutThreshold) {
+            ui.ball.classList.add('shake');
+            ui.gameCard = document.querySelector('.game-card');
+            // ui.gameCard.style.transform = `translate(${Math.random()*2-1}px, ${Math.random()*2-1}px)`;
         } else {
-            pressureBar.style.backgroundColor = '#ef4444'; // 红（危险）
-        }
-
-        // 锅的震动反馈
-        if (pressure > DANGER_THRESHOLD) {
-            pot.classList.add('shake');
-            statusText.innerText = "警告！即将崩盘！快松手！";
-            statusText.style.color = "#ef4444";
-            
-            // 盖子跳动
-            lid.style.top = (Math.random() * -5 - 10) + 'px';
-            
-            // 蒸汽
-            steam.style.opacity = 1;
-        } else {
-            pot.classList.remove('shake');
-            lid.style.top = '-10px';
-            steam.style.opacity = pressure > 50 ? 0.3 : 0;
+            ui.ball.classList.remove('shake');
+            // ui.gameCard.style.transform = 'none';
         }
     }
 
-    function explode() {
-        isGameOver = true;
-        cancelAnimationFrame(gameLoopId);
-        pot.classList.remove('shake');
-        pot.classList.add('explode');
+    function triggerBurnout() {
+        state.isGameOver = true;
+        ui.ball.classList.remove('shake');
+        ui.ball.classList.add('explode-anim');
+        ui.btn.classList.add('disabled');
         
         setTimeout(() => {
-            showResult("全面崩盘！", "你把自己逼得太紧了（饥饿感过强），导致意志力断裂，发生了报复性暴食。");
-        }, 500);
+            ui.endIcon.innerText = "💥";
+            ui.endTitle.innerText = "心态崩了 (Burnout)";
+            ui.endDesc.innerHTML = `你在追求 <b>${state.goalName}</b> 的过程中把自己逼得太紧了。<br><br>过度焦虑导致身心俱疲，你选择了放弃。`;
+            ui.endScreen.style.display = 'flex';
+        }, 800);
     }
 
-    function winGame() {
-        isGameOver = true;
-        cancelAnimationFrame(gameLoopId);
-        showResult("减肥成功！", "你完美掌握了平衡！在保持适度饥饿感（收益）的同时，没有让自己崩溃。");
-    }
-
-    function showResult(title, desc) {
-        resultTitle.innerText = title;
-        resultDesc.innerText = desc;
-        overlay.style.display = 'flex';
-        controlBtn.classList.add('disabled');
-    }
-
-    function resetGame() {
-        pressure = 0;
-        progress = 0;
-        isGameOver = false;
-        isHeating = false;
+    function triggerSuccess() {
+        state.isGameOver = true;
+        ui.btn.classList.add('disabled');
         
-        pot.classList.remove('explode');
-        overlay.style.display = 'none';
-        controlBtn.classList.remove('disabled');
-        controlBtn.style.background = "#333";
-        controlBtn.innerText = "按住加压 (控制饥饿)";
-        
-        updateVisuals();
-        gameLoopId = requestAnimationFrame(updateGame);
+        ui.endIcon.innerText = "🏆";
+        ui.endTitle.innerText = "目标达成！";
+        ui.endDesc.innerHTML = `恭喜！你成功完成了 <b>${state.goalName}</b>。<br><br>你完美掌握了“张弛有度”的艺术，在保持动力的同时没有让自己崩溃。`;
+        ui.endScreen.style.display = 'flex';
     }
-
-    // 启动游戏
-    resetGame();
 
 </script>
 
