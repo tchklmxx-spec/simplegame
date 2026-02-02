@@ -132,13 +132,14 @@
             border-radius: 10px 10px 0 0;
         }
 
-        /* 区域线 - 动态调整位置以匹配JS逻辑 */
+        /* 区域线 - 通过JS动态设置位置 */
         .zone-marker {
             position: absolute;
             width: 100%;
             border-top: 2px dashed rgba(0,0,0,0.2);
             left: 0;
             z-index: 5;
+            transition: bottom 0.3s ease;
         }
         .zone-marker::after {
             position: absolute;
@@ -149,9 +150,8 @@
             width: 30px;
         }
         
-        /* 这里的百分比对应 JS 中的阈值 */
-        .zone-flow { bottom: 55%; border-color: var(--success); } 
-        .zone-burnout { bottom: 85%; border-color: var(--danger); } 
+        .zone-flow { border-color: var(--success); } 
+        .zone-burnout { border-color: var(--danger); } 
 
         .metric-label {
             margin-top: 8px;
@@ -306,8 +306,8 @@
         <!-- 压力/焦虑值 -->
         <div class="metric-col">
             <div class="bar-container">
-                <div class="zone-marker zone-burnout"></div>
-                <div class="zone-marker zone-flow"></div>
+                <div class="zone-marker zone-burnout" id="zone-burnout"></div>
+                <div class="zone-marker zone-flow" id="zone-flow"></div>
                 <div class="bar-fill" id="stress-bar" style="height: 0%; background: var(--comfort);"></div>
             </div>
             <div class="metric-label">压力值</div>
@@ -354,15 +354,15 @@
 <script>
     // 游戏核心参数 - 难度已调整
     const PARAMS = {
-        stressRate: 0.8,      // 施压时压力上升速度 (变快了)
-        recoveryRate: 0.4,    // 休息时压力下降速度
+        stressRate: 3,      // 施压时压力上升速度 (变快了)
+        recoveryRate: 1.5,    // 休息时压力下降速度
         
-        // 关键区间调整：窗口变窄了 (55-85)
-        flowThreshold: 55,    // 最佳平衡下限 (提高了，更难进入)
+        // 关键区间调整：窗口变窄了 (65-85)
+        flowThreshold: 65,    // 最佳平衡下限 (提高了，更难进入)
         burnoutThreshold: 85, // 崩溃边缘上限
         
-        baseSpeed: 0.08,      // 基础前进速度
-        decayRate: 0.05       // 舒适区倒退速度 (逆水行舟)
+        baseSpeed: 0.5,      // 基础前进速度
+        decayRate: 0.5       // 舒适区倒退速度 (逆水行舟)
     };
 
     // 状态变量
@@ -390,8 +390,17 @@
         goalInput: document.getElementById('goal-input'),
         endTitle: document.getElementById('end-title'),
         endDesc: document.getElementById('end-desc'),
-        endIcon: document.getElementById('end-icon')
+        endIcon: document.getElementById('end-icon'),
+        zoneFlow: document.getElementById('zone-flow'),
+        zoneBurnout: document.getElementById('zone-burnout')
     };
+
+    // 初始化区域标记位置
+    function updateZoneMarkers() {
+        // 虚线的bottom值应该等于对应的阈值百分比
+        ui.zoneFlow.style.bottom = `${PARAMS.flowThreshold}%`;
+        ui.zoneBurnout.style.bottom = `${PARAMS.burnoutThreshold}%`;
+    }
 
     function initGame() {
         const input = ui.goalInput.value.trim();
@@ -412,6 +421,9 @@
         ui.ball.classList.remove('explode-anim');
         ui.card.classList.remove('warning-bg');
         ui.ball.innerText = "😴";
+        
+        // 更新区域标记位置
+        updateZoneMarkers();
         
         startGameLoop();
     }
@@ -571,6 +583,9 @@
         ui.endDesc.innerHTML = `太强了！你拿下了 <b>${state.goalName}</b>。<br><br>你不仅克服了懒惰（防止了进度倒退），还完美控制了压力水平。你是真正的时间管理大师。`;
         ui.endScreen.style.display = 'flex';
     }
+
+    // 页面加载时初始化区域标记
+    window.addEventListener('DOMContentLoaded', updateZoneMarkers);
 
 </script>
 
